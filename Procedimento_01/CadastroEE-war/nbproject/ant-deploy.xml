@@ -1,26 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
 <project default="-deploy-ant" basedir=".">
     <target name="-init-cl-deployment-env" if="deploy.ant.enabled">
         <property file="${deploy.ant.properties.file}" />
         <available file="${deploy.ant.docbase.dir}/WEB-INF/sun-web.xml" property="sun.web.present"/>
         <available file="${deploy.ant.docbase.dir}/WEB-INF/glassfish-web.xml" property="glassfish.web.present"/>
         <available file="${deploy.ant.resource.dir}" property="has.setup"/>
-        <tempfile prefix="gfv3" property="gfv3.password.file" destdir="${java.io.tmpdir}"/>
+        <tempfile prefix="gfv3" property="gfv3.password.file" destdir="${java.io.tmpdir}"/>  <!-- do not forget to delete this! -->
         <echo message="AS_ADMIN_PASSWORD=${gfv3.password}" file="${gfv3.password.file}"/>
     </target>
 
     <target name="-parse-sun-web" depends="-init-cl-deployment-env" if="sun.web.present">
         <tempfile prefix="gfv3" property="temp.sun.web" destdir="${java.io.tmpdir}"/>
         <copy file="${deploy.ant.docbase.dir}/WEB-INF/sun-web.xml" tofile="${temp.sun.web}"/>
+        <!-- The doctype triggers resolution which can fail -->
         <replace file="${temp.sun.web}">
             <replacetoken><![CDATA[<!DOCTYPE]]></replacetoken>
-            <replacevalue><![CDATA[<!--_DOCTYPE]]></replacevalue>
+            <replacevalue><![CDATA[<!-- <!DOCTYPE]]></replacevalue>
         </replace>
         <replace file="${temp.sun.web}">
             <replacetoken><![CDATA[<sun-web-app]]></replacetoken>
-            <replacevalue><![CDATA[<sun-web-app]]></replacevalue>
+            <replacevalue><![CDATA[--> <sun-web-app]]></replacevalue>
         </replace>
-        <xmlproperty file="${temp.sun.web}" validate="false"/>
+        <xmlproperty file="${temp.sun.web}" validate="false">
+        </xmlproperty>    
         <delete file="${temp.sun.web}"/>
         <condition property="deploy.ant.client.url" value="${gfv3.url}${sun-web-app.context-root}" else="${gfv3.url}/${ant.project.name}">
             <isset property="sun-web-app.context-root"/>
@@ -29,19 +51,20 @@
             <isset property="sun-web-app.context-root"/>
         </condition>
     </target>
-
     <target name="-parse-glassfish-web" depends="-init-cl-deployment-env" if="glassfish.web.present">
         <tempfile prefix="gfv3" property="temp.gf.web" destdir="${java.io.tmpdir}"/>
         <copy file="${deploy.ant.docbase.dir}/WEB-INF/glassfish-web.xml" tofile="${temp.gf.web}"/>
+        <!-- The doctype triggers resolution which can fail -->
         <replace file="${temp.gf.web}">
             <replacetoken><![CDATA[<!DOCTYPE]]></replacetoken>
-            <replacevalue><![CDATA[<!--_DOCTYPE]]></replacevalue>
+            <replacevalue><![CDATA[<!-- <!DOCTYPE]]></replacevalue>
         </replace>
         <replace file="${temp.gf.web}">
             <replacetoken><![CDATA[<glassfish-web-app]]></replacetoken>
-            <replacevalue><![CDATA[<glassfish-web-app]]></replacevalue>
+            <replacevalue><![CDATA[--> <glassfish-web-app]]></replacevalue>
         </replace>
-        <xmlproperty file="${temp.gf.web}" validate="false"/>
+        <xmlproperty file="${temp.gf.web}" validate="false">
+        </xmlproperty>
         <delete file="${temp.gf.web}"/>
         <condition property="deploy.ant.client.url" value="${gfv3.url}${glassfish-web-app.context-root}" else="${gfv3.url}/${ant.project.name}">
             <isset property="glassfish-web-app.context-root"/>
@@ -50,11 +73,9 @@
             <isset property="glassfish-web-app.context-root"/>
         </condition>
     </target>
-
     <target name="-no-parse-sun-web" depends="-init-cl-deployment-env" unless="sun.web.present">
         <property name="deploy.context.root.argument" value=""/>
     </target>
-
     <target name="-add-resources" depends="-init-cl-deployment-env" if="has.setup">
         <tempfile prefix="gfv3" property="gfv3.resources.dir" destdir="${java.io.tmpdir}"/>
         <mkdir dir="${gfv3.resources.dir}"/>
@@ -67,31 +88,27 @@
         </jar>
         <delete dir="${gfv3.resources.dir}"/>
     </target>
-
-    <target name="-deploy-ant" depends="-parse-glassfish-web, -parse-sun-web, -no-parse-sun-web, -add-resources" if="deploy.ant.enabled">
+    <target name="-deploy-ant" depends="-parse-glassfish-web, -parse-sun-web, -no-parse-sun-web,-add-resources" if="deploy.ant.enabled">
         <antcall target="-deploy-without-pw"/>
         <antcall target="-deploy-with-pw"/>
     </target>
 
     <target name="-deploy-without-pw" unless="gfv3.password">
         <echo message="Deploying ${deploy.ant.archive}"/>
-        <tempfile prefix="gfv3" property="gfv3.results.file" destdir="${java.io.tmpdir}"/>
+        <tempfile prefix="gfv3" property="gfv3.results.file" destdir="${java.io.tmpdir}"/>  <!-- do not forget to delete this! -->
         <property name="full.deploy.ant.archive" location="${deploy.ant.archive}"/>
         <get src="${gfv3.admin.url}/__asadmin/deploy?path=${full.deploy.ant.archive}${deploy.context.root.argument}&amp;force=true&amp;name=${ant.project.name}"
-             dest="${gfv3.results.file}"/>
-        <delete file="${gfv3.results.file}"/>
+            dest="${gfv3.results.file}"/>
+        <delete file="${gfv3.results.file}"/>    
     </target>
-
     <target name="-deploy-with-pw" if="gfv3.password">
         <echo message="Deploying ${deploy.ant.archive}"/>
-        <tempfile prefix="gfv3" property="gfv3.results.file" destdir="${java.io.tmpdir}"/>
+        <tempfile prefix="gfv3" property="gfv3.results.file" destdir="${java.io.tmpdir}"/>  <!-- do not forget to delete this! -->
         <property name="full.deploy.ant.archive" location="${deploy.ant.archive}"/>
-        <get username="${gfv3.username}" password="${gfv3.password}"
-             src="${gfv3.admin.url}/__asadmin/deploy?path=${full.deploy.ant.archive}${deploy.context.root.argument}&amp;force=true&amp;name=${ant.project.name}"
-             dest="${gfv3.results.file}"/>
+        <get username="${gfv3.username}" password="${gfv3.password}" src="${gfv3.admin.url}/__asadmin/deploy?path=${full.deploy.ant.archive}${deploy.context.root.argument}&amp;force=true&amp;name=${ant.project.name}"
+            dest="${gfv3.results.file}"/>
         <delete file="${gfv3.results.file}"/>
     </target>
-
     <target name="-undeploy-ant" depends="-init-cl-deployment-env" if="deploy.ant.enabled">
         <antcall target="-undeploy-without-pw"/>
         <antcall target="-undeploy-with-pw"/>
@@ -99,17 +116,16 @@
 
     <target name="-undeploy-without-pw" unless="gfv3.password">
         <echo message="Undeploying ${deploy.ant.archive}"/>
-        <tempfile prefix="gfv3" property="gfv3.results.file" destdir="${java.io.tmpdir}"/>
-        <get src="${gfv3.admin.url}/__asadmin/undeploy?name=${ant.project.name}" dest="${gfv3.results.file}"/>
-        <delete file="${gfv3.results.file}"/>
+        <tempfile prefix="gfv3" property="gfv3.results.file" destdir="${java.io.tmpdir}"/>  <!-- do not forget to delete this! -->
+        <get src="${gfv3.admin.url}/__asadmin/undeploy?name=${ant.project.name}"
+            dest="${gfv3.results.file}"/>
+        <delete file="${gfv3.results.file}"/>    
     </target>
-
     <target name="-undeploy-with-pw" if="gfv3.password">
         <echo message="Undeploying ${deploy.ant.archive}"/>
-        <tempfile prefix="gfv3" property="gfv3.results.file" destdir="${java.io.tmpdir}"/>
-        <get username="${gfv3.username}" password="${gfv3.password}" 
-             src="${gfv3.admin.url}/__asadmin/undeploy?name=${ant.project.name}" 
-             dest="${gfv3.results.file}"/>
+        <tempfile prefix="gfv3" property="gfv3.results.file" destdir="${java.io.tmpdir}"/>  <!-- do not forget to delete this! -->
+        <get username="${gfv3.username}" password="${gfv3.password}" src="${gfv3.admin.url}/__asadmin/undeploy?name=${ant.project.name}"
+            dest="${gfv3.results.file}"/>
         <delete file="${gfv3.results.file}"/>
     </target>
 </project>
