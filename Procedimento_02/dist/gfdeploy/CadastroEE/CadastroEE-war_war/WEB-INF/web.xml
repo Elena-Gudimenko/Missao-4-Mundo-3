@@ -6,18 +6,8 @@
                              https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd">
 
     <servlet>
-        <servlet-name>ServletProduto</servlet-name>
-        <servlet-class>cadastroee.servlets.ServletProduto</servlet-class>
-    </servlet>
-
-    <servlet-mapping>
-        <servlet-name>ServletProduto</servlet-name>
-        <url-pattern>/ServletProduto</url-pattern>
-    </servlet-mapping>
-
-    <servlet>
         <servlet-name>ServletProdutoFC</servlet-name>
-        <servlet-class>cadastroee.servlets.ServletProdutoFC</servlet-class>
+        <servlet-class>cadastroee.servlets.ServletProdutoFrontController</servlet-class>
     </servlet>
 
     <servlet-mapping>
@@ -28,5 +18,9 @@
     <session-config>
         <session-timeout>30</session-timeout>
     </session-config>
+
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+    </welcome-file-list>
 
 </web-app>

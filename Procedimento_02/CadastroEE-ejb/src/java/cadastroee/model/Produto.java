@@ -1,7 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
+
 package cadastroee.model;
 
 import jakarta.persistence.Basic;
@@ -150,5 +147,6 @@ public class Produto implements Serializable {
     public String toString() {
         return "cadastroee.model.Produto[ id=" + id + " ]";
     }
+
     
 }
